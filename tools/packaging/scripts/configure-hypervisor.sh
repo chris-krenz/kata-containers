@@ -350,8 +350,9 @@ generate_qemu_options() {
 	fi
 	qemu_options+=(size:--disable-nettle)
 
-	# Disable XEN driver
+	# Disable XEN driver and pass-through
 	qemu_options+=(size:--disable-xen)
+	qemu_options+=(size:--disable-xen-pci-passthrough)
 
 	# Disable Capstone
 	qemu_options+=(size:--disable-capstone)
@@ -401,6 +402,12 @@ generate_qemu_options() {
 	qemu_options+=(size:--disable-uadk)
 	# Disable syscall buffer debugging support
 	qemu_options+=(size:--disable-debug-remap)
+	# Disable gio support
+	qemu_options+=(size:--disable-gio)
+	# Disable libdaxctl part of ndctl support
+	qemu_options+=(size:--disable-libdaxctl)
+	qemu_options+=(size:--disable-oss)
+
 
 	#---------------------------------------------------------------------
 	# Enabled options
@@ -422,8 +429,9 @@ generate_qemu_options() {
 	# (-fsdev "...,security_model=passthrough,..."), qemu uses a helper
 	# application called virtfs-proxy-helper(1) to make certain 9p
 	# operations safer.
-	qemu_options+=(functionality:--enable-virtfs)
-	qemu_options+=(functionality:--enable-attr)
+	qemu_options+=(functionality:--disable-virtfs)
+	qemu_options+=(functionality:--disable-attr)
+
 	# virtio-fs needs cap-ng and seccomp
 	qemu_options+=(functionality:--enable-cap-ng)
 	qemu_options+=(functionality:--enable-seccomp)
@@ -432,10 +440,13 @@ generate_qemu_options() {
 	# for that architecture
 	if [ "$arch" == x86_64 ]; then
 		qemu_options+=(speed:--enable-avx2)
+		qemu_options+=(speed:--enable-avx512bw)
 		# According to QEMU's nvdimm documentation: When 'pmem' is 'on' and QEMU is
 		# built with libpmem support, QEMU will take necessary operations to guarantee
 		# the persistence of its own writes to the vNVDIMM backend.
-		qemu_options+=(functionality:--enable-libpmem)
+		#qemu_options+=(functionality:--enable-libpmem)
+		#qemu_options+=(functionality:--enable-libdaxctl)
+		#qemu_options+=(functionality:--enable-libndctl)
 	else
 		qemu_options+=(speed:--disable-avx2)
 		qemu_options+=(functionality:--disable-libpmem)
@@ -483,7 +494,7 @@ generate_qemu_options() {
 
 	unset _qemu_cflags
 
-	_qemu_ldflags=""
+
 
 	# SECURITY: Disallow executing code on the stack.
 	_qemu_ldflags+=" -z noexecstack"
@@ -495,6 +506,9 @@ generate_qemu_options() {
 	# SECURITY: Make the linker resolve all symbols immediately on program
 	# load.
 	_qemu_ldflags+=" -z now"
+
+	_qemu_ldflags+=" --verbose"
+
 
 	qemu_options+=(security:"--extra-ldflags=\"${_qemu_ldflags}\"")
 

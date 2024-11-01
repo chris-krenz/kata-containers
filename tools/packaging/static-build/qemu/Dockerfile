@@ -17,13 +17,13 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN if [ "${ARCH}" != "$(uname -m)" ]; then sed -i 's/^deb/deb [arch=amd64]/g' /etc/apt/sources.list && \
     dpkg --add-architecture "${DPKG_ARCH#:}" && \
-    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ focal main restricted" >> /etc/apt/sources.list && \
-    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ focal-updates main restricted" >> /etc/apt/sources.list && \
-    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ focal universe" >> /etc/apt/sources.list && \
-    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ focal-updates universe" >> /etc/apt/sources.list && \
-    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ focal multiverse" >> /etc/apt/sources.list && \
-    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ focal-updates multiverse" >> /etc/apt/sources.list && \
-    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ focal-backports main restricted universe multiverse" >> /etc/apt/sources.list; fi
+    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ jammy main restricted" >> /etc/apt/sources.list && \
+    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ jammy-updates main restricted" >> /etc/apt/sources.list && \
+    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ jammy universe" >> /etc/apt/sources.list && \
+    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ jammy-updates universe" >> /etc/apt/sources.list && \
+    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ jammy multiverse" >> /etc/apt/sources.list && \
+    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ jammy-updates multiverse" >> /etc/apt/sources.list && \
+    echo "deb [arch=${DPKG_ARCH#:}] http://ports.ubuntu.com/ jammy-backports main restricted universe multiverse" >> /etc/apt/sources.list; fi
 
 RUN apt-get update && apt-get upgrade -y && \
     apt-get --no-install-recommends install -y \
@@ -53,7 +53,20 @@ RUN apt-get update && apt-get upgrade -y && \
 	    libpixman-1-dev${DPKG_ARCH} \
 	    libselinux1-dev${DPKG_ARCH} \
 	    libtool${DPKG_ARCH} \
+	    liburing-dev${DPKG_ARCH} \
+	    libtracefs-dev${DPKG_ARCH} \
+	    libtraceevent-dev${DPKG_ARCH} \
+	    libkmod-dev${DPKG_ARCH} \
+	    libudev-dev${DPKG_ARCH} \
+	    libjson-c-dev${DPKG_ARCH} \
+	    libkeyutils-dev${DPKG_ARCH} \
+	    libiniparser-dev${DPKG_ARCH} \
+	    cmake \
+	    meson \
 	    make \
+	    asciidoctor \
+	    systemd \
+	    udev \
 	    ninja-build \
 	    pkg-config${DPKG_ARCH} \
 	    libseccomp-dev${DPKG_ARCH} \
@@ -70,10 +83,20 @@ RUN apt-get update && apt-get upgrade -y && \
     if [ "${ARCH}" != "$(uname -m)" ]; then apt-get install --no-install-recommends -y gcc-"${GCC_ARCH}"-linux-gnu; fi && \
     apt-get clean && rm -rf /var/lib/apt/lists/
 
-RUN git clone  https://github.com/axboe/liburing/ ~/liburing && \
-    cd ~/liburing && \
-    git checkout tags/liburing-2.1 && \
-    GCC_ARCH="${ARCH}" && if [ "${ARCH}" = "ppc64le" ]; then GCC_ARCH="powerpc64le"; fi && \
-    if [ "${ARCH}" != "$(uname -m)" ]; then PREFIX="${GCC_ARCH}-linux-gnu"; fi && \
-    ./configure --cc=${GCC_ARCH}-linux-gnu-gcc --cxx=${GCC_ARCH}-linux-gnu-cpp --prefix=/usr/${PREFIX}/ && \
-    make && make install && ldconfig
+RUN git clone --branch v80 --single-branch https://github.com/pmem/ndctl /tmp/ndctl
+WORKDIR  /tmp/ndctl
+RUN	meson setup build --default-library static && \
+	meson compile -C build && \
+	meson install -C build && rm -rf /tmp/ndctl && ldconfig
+
+WORKDIR /root
+
+
+#RUN git clone  https://github.com/axboe/liburing/ ~/liburing && \
+#    cd ~/liburing && \
+#    git checkout tags/liburing-2.1 && \
+#    GCC_ARCH="${ARCH}" && if [ "${ARCH}" = "ppc64le" ]; then GCC_ARCH="powerpc64le"; fi && \
+#    if [ "${ARCH}" != "$(uname -m)" ]; then PREFIX="${GCC_ARCH}-linux-gnu"; fi && \
+#    ./configure --cc=${GCC_ARCH}-linux-gnu-gcc --cxx=${GCC_ARCH}-linux-gnu-cpp --prefix=/usr/${PREFIX}/ && \
+#    make && make install && ldconfig
+
