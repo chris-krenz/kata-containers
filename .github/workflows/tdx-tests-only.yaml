@@ -1,0 +1,20 @@
+name: Trigger run-k8s-tests-on-tdx Only
+on:
+  workflow_dispatch: 
+  pull_request_target:
+    branches:
+      - 'main'
+      - 'stable-*'
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+
+jobs:
+  trigger-tdx-tests:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'ok-to-test-tdx') }}
+    uses: ./.github/workflows/run-kata-coco-tests.yaml
+    with:
+      run_only_tdx_tests: true  # Modified run-kata-coco-tests.yaml to run only run-k8s-tests-on-tdx if invoked with this input
+    secrets: inherit
