@@ -18,3 +18,4 @@ jobs:
     with:
       run_only_tdx_tests: true  # Modified run-kata-coco-tests.yaml to run only run-k8s-tests-on-tdx if invoked with this input
     secrets: inherit
+    
